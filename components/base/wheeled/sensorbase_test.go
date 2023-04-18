@@ -274,7 +274,6 @@ func TestSpinWithMovementSensor(t *testing.T) {
 	ctx := context.Background()
 	sensorCtx, sensorCancel := context.WithCancel(ctx)
 	base := wheeledBase{
-		Unimplemented:        generic.Unimplemented{},
 		widthMm:              1,
 		wheelCircumferenceMm: 1,
 		spinSlipFactor:       0,

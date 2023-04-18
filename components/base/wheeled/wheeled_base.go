@@ -426,7 +426,7 @@ func createWheeledBase(
 	wb.allMotors = append(wb.allMotors, wb.right...)
 
 	if len(newConf.MovementSensor) != 0 {
-		sb, err := makeBaseWithSensors(ctx, wb, deps, newConf, logger)
+		sb, err := makeBaseWithSensors(ctx, wb, deps, newConf.MovementSensor, logger)
 		if err != nil {
 			return nil, err
 		}

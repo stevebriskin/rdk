@@ -12,10 +12,9 @@ import (
 	"go.viam.com/utils"
 
 	"go.viam.com/rdk/components/base"
-	"go.viam.com/rdk/components/generic"
 	"go.viam.com/rdk/components/movementsensor"
 	"go.viam.com/rdk/operation"
-	"go.viam.com/rdk/registry"
+	"go.viam.com/rdk/resource"
 	rdkutils "go.viam.com/rdk/utils"
 )
 
@@ -29,7 +28,6 @@ const (
 )
 
 type sensorBase struct {
-	generic.Unimplemented
 	logger golog.Logger
 
 	activeBackgroundWorkers sync.WaitGroup
@@ -48,9 +46,9 @@ type sensorBase struct {
 
 func makeBaseWithSensors(
 	ctx context.Context,
-	base base.LocalBase,
-	deps registry.Dependencies,
-	conf *Config,
+	base *wheeledBase,
+	deps resource.Dependencies,
+	ms []string,
 	logger golog.Logger,
 ) (base.LocalBase, error) {
 	// use base's creator context as the long standing context fot eh sensor loop
@@ -58,7 +56,7 @@ func makeBaseWithSensors(
 	sb := &sensorBase{base: base, logger: logger, baseCtx: ctx}
 
 	var omsName string
-	for _, msName := range conf.MovementSensor {
+	for _, msName := range ms {
 		ms, err := movementsensor.FromDependencies(deps, msName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "no movement_sensor namesd (%s)", msName)
@@ -77,7 +75,7 @@ func makeBaseWithSensors(
 }
 
 // setPolling determines whether we want the sensor loop to run and stop the base with sensor feedback
-// should be set to false everywhere except when sensor feedbakc should be polled
+// should be set to false everywhere except when sensor feedback should be polled
 // currently when a orientation reporting sensor is used in Spin.
 func (sb *sensorBase) setPolling(isActive bool) {
 	sb.sensorMu.Lock()
