@@ -2,7 +2,6 @@ package wheeled
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -137,7 +136,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 	errCounter := 0
 
 	startTime := time.Now()
-	// timeout duration is is 1.5 times the expected time to perform a movement
+	// timeout duration is 1.5 times the expected time to perform a movement
 	timeoutDur := time.Duration(int(time.Second) * int(1.5*math.Abs(angleDeg/degsPerSec)))
 
 	sb.activeBackgroundWorkers.Add(1)
@@ -173,7 +172,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 				}
 				errCounter = 0 // reset reading error count to zero if we are successfully reading again
 
-				atTarget, overShot, minTravel := getTurnState(currYaw, startYaw, targetYaw, dir, angleDeg, errBound)
+				atTarget, overShot, minTravel := getTurnState(currYaw, startYaw, targetYaw, dir, errBound)
 
 				// if the imu yaw reading is close to 360, we are near a full turn,
 				// so we adjust the current reading by 360 * the number of turns we've done
@@ -231,15 +230,15 @@ func (sb *sensorBase) stopSpinWithSensor(
 	return nil
 }
 
-func getTurnState(currYaw, startYaw, targetYaw, dir, angleDeg, errorBound float64) (atTarget, overShot, minTravel bool) {
+func getTurnState(currYaw, startYaw, targetYaw, dir, errorBound float64) (atTarget, overShot, minTravel bool) {
 	atTarget = math.Abs(targetYaw-currYaw) < errorBound
 	overShot = hasOverShot(currYaw, startYaw, targetYaw, dir)
 	travelIncrement := math.Abs((targetYaw - startYaw) * increment)
+	// check the case where we're asking for a 360 degree turn, this results in a zero travelIncrement
 	if rdkutils.Float64AlmostEqual(travelIncrement, 0.0, 0.001) {
 		travelIncrement = boundCheckTarget
-	} else {
-		minTravel = math.Abs(currYaw-startYaw) > travelIncrement
 	}
+	minTravel = math.Abs(currYaw-startYaw) > travelIncrement
 	return atTarget, overShot, minTravel
 }
 
