@@ -2,6 +2,7 @@ package wheeled
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -135,6 +136,10 @@ func (sb *sensorBase) stopSpinWithSensor(
 	turnCount := 0
 	errCounter := 0
 
+	startTime := time.Now()
+	// timeout duration is is 1.5 times the expected time to perform a movement
+	timeoutDur := time.Duration(int(time.Second) * int(1.5*math.Abs(angleDeg/degsPerSec)))
+
 	sb.activeBackgroundWorkers.Add(1)
 	utils.ManagedGo(func() {
 		ticker := time.NewTicker(yawPollTime)
@@ -189,7 +194,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 				// check if we've overshot our target by the errTarget value
 				// check if we've travelled at all
 				if fullTurns == 0 {
-					if atTarget && (minTravel || overShot) {
+					if minTravel && (atTarget || overShot) {
 						if err := sb.Stop(ctx, nil); err != nil {
 							return
 						}
@@ -201,7 +206,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 						}
 					}
 				} else {
-					if (turnCount >= fullTurns) && atTarget && (minTravel || overShot) {
+					if minTravel && (turnCount > fullTurns) && (atTarget || overShot) {
 						if err := sb.Stop(ctx, nil); err != nil {
 							return
 						}
@@ -213,6 +218,13 @@ func (sb *sensorBase) stopSpinWithSensor(
 						}
 					}
 				}
+
+				if time.Since(startTime) > timeoutDur {
+					sb.logger.Debug("exceeded time for Spin call, stopping base")
+					if err := sb.Stop(ctx, nil); err != nil {
+						return
+					}
+				}
 			}
 		}
 	}, sb.activeBackgroundWorkers.Done)
@@ -222,7 +234,12 @@ func (sb *sensorBase) stopSpinWithSensor(
 func getTurnState(currYaw, startYaw, targetYaw, dir, angleDeg, errorBound float64) (atTarget, overShot, minTravel bool) {
 	atTarget = math.Abs(targetYaw-currYaw) < errorBound
 	overShot = hasOverShot(currYaw, startYaw, targetYaw, dir)
-	minTravel = math.Abs(currYaw-startYaw) > math.Abs(angleDeg*increment)
+	travelIncrement := math.Abs((targetYaw - startYaw) * increment)
+	if rdkutils.Float64AlmostEqual(travelIncrement, 0.0, 0.001) {
+		travelIncrement = boundCheckTarget
+	} else {
+		minTravel = math.Abs(currYaw-startYaw) > travelIncrement
+	}
 	return atTarget, overShot, minTravel
 }
 
