@@ -53,7 +53,8 @@ func makeBaseWithSensors(
 	conf *Config,
 	logger golog.Logger,
 ) (base.LocalBase, error) {
-	// spawn a new context for sensors so we don't add many background workers
+	// use base's creator context as the long standing context fot eh sensor loop
+	// so we don't add many background workers
 	sb := &sensorBase{base: base, logger: logger, baseCtx: ctx}
 
 	var omsName string
@@ -75,8 +76,9 @@ func makeBaseWithSensors(
 	return sb, nil
 }
 
-// setPolling determines whether we want the sensor loop to run ad stop the base with sensor feedback
-// should be set to false everywhere except when sensor feedback is need to stop movement.
+// setPolling determines whether we want the sensor loop to run and stop the base with sensor feedback
+// should be set to false everywhere except when sensor feedbakc should be polled
+// currently when a orientation reporting sensor is used in Spin.
 func (sb *sensorBase) setPolling(isActive bool) {
 	sb.sensorMu.Lock()
 	sb.sensorPolling = isActive
@@ -168,7 +170,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 
 				atTarget, overShot, minTravel := getTurnState(currYaw, startYaw, targetYaw, dir, angleDeg, errBound)
 
-				// if the imu yaw reading is close to 360, we are nearing a full turn,
+				// if the imu yaw reading is close to 360, we are near a full turn,
 				// so we adjust the current reading by 360 * the number of turns we've done
 				if atTarget && (fullTurns > 0) {
 					turnCount++
@@ -232,7 +234,7 @@ func getCurrentYaw(ctx context.Context, ms movementsensor.MovementSensor,
 	if err != nil {
 		return 0, err
 	}
-	// Add Pi  to make the computation for overshoot simpler
+	// add Pi to make the computation for overshoot simpler
 	// turns imus from -180 -> 180 to a 0 -> 360 range
 	return addAnglesInDomain(rdkutils.RadToDeg(orientation.EulerAngles().Yaw), 0), nil
 }
@@ -252,9 +254,9 @@ func findSpinParams(angleDeg, degsPerSec, currYaw float64) (float64, float64, in
 	dir := 1.0
 	if math.Signbit(degsPerSec) != math.Signbit(angleDeg) {
 		// both positive or both negative -> counterclockwise spin call
-		// counterclockwise spin calls add allowable angles
+		// counterclockwise spin calls add angles
 		// the signs being different --> clockwise spin call
-		// cloxkwise spin calls subtract allowable angles
+		// clockwise spin calls subtract angles
 		dir = -1
 	}
 	fullTurns := int(math.Abs(angleDeg)) / int(oneTurn)
@@ -274,8 +276,8 @@ func angleBetween(current, bound1, bound2 float64) bool {
 
 func hasOverShot(angle, start, target, dir float64) bool {
 	switch {
-	case dir == -1 && start > target:
-		// for cases with a quadrant switch from 1 -> 4
+	case dir == -1 && start > target: // clockwise
+		// for cases with a quadrant switch from 1 <-> 4
 		// check if the current angle is in the regions before the
 		// target and after the start
 		over := angleBetween(angle, target, 0) || angleBetween(angle, 360, start)
@@ -283,14 +285,14 @@ func hasOverShot(angle, start, target, dir float64) bool {
 	case dir == -1 && target > start:
 		// the overshoot range is the inside range between the start and target
 		return angleBetween(angle, target, start)
-	case dir == 1 && start > target:
+	case dir == 1 && start > target: // counterclockwise
 		// for cases with a quadrant switch from 1 <-> 4
 		// check if the current angle is not in the regions after the
 		// target and before the start
 		over := !angleBetween(angle, 0, target) && !angleBetween(angle, start, 360)
 		return over
 	default:
-		// the overshoot range is the outside range between the start and target
+		// the overshoot range is the range of angles outside the start and target ranges
 		return !angleBetween(angle, start, target)
 	}
 }
