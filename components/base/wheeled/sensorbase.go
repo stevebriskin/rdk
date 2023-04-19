@@ -14,7 +14,6 @@ import (
 	"go.viam.com/rdk/components/base"
 	"go.viam.com/rdk/components/generic"
 	"go.viam.com/rdk/components/movementsensor"
-	"go.viam.com/rdk/config"
 	"go.viam.com/rdk/operation"
 	"go.viam.com/rdk/registry"
 	rdkutils "go.viam.com/rdk/utils"
@@ -51,19 +50,14 @@ func makeBaseWithSensors(
 	ctx context.Context,
 	base base.LocalBase,
 	deps registry.Dependencies,
-	cfg config.Component,
+	conf *Config,
 	logger golog.Logger,
 ) (base.LocalBase, error) {
 	// spawn a new context for sensors so we don't add many background workers
-	attr, ok := cfg.ConvertedAttributes.(*Config)
-	if !ok {
-		return nil, rdkutils.NewUnexpectedTypeError(attr, &Config{})
-	}
-
 	sb := &sensorBase{base: base, logger: logger, baseCtx: ctx}
 
 	var omsName string
-	for _, msName := range attr.MovementSensor {
+	for _, msName := range conf.MovementSensor {
 		ms, err := movementsensor.FromDependencies(deps, msName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "no movement_sensor namesd (%s)", msName)

@@ -335,7 +335,9 @@ func TestSensorBase(t *testing.T) {
 			return &movementsensor.Properties{OrientationSupported: true}, nil
 		},
 	}
-	sensorBase, err := makeBaseWithSensors(ctx, wheeled, msDeps, sConfig, logger)
+	conf, ok := sConfig.ConvertedAttributes.(*Config)
+	test.That(t, ok, test.ShouldBeTrue)
+	sensorBase, err := makeBaseWithSensors(ctx, wheeled, msDeps, conf, logger)
 	test.That(t, err, test.ShouldBeNil)
 	test.That(t, sensorBase, test.ShouldNotBeNil)
 }
