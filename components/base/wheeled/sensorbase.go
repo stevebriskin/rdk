@@ -20,12 +20,12 @@ import (
 )
 
 const (
-	yawPollTime = 10 * time.Millisecond
-	errTurn     = 2.0
-	errTarget   = 5.0
-	oneTurn     = 360
-	increment   = 0.1
-	sensorDebug = true
+	yawPollTime      = 10 * time.Millisecond
+	boundCheckTurn   = 2.0
+	boundCheckTarget = 5.0
+	oneTurn          = 360
+	increment        = 0.1
+	sensorDebug      = true
 )
 
 type sensorBase struct {
@@ -128,9 +128,9 @@ func (sb *sensorBase) stopSpinWithSensor(
 	}
 
 	targetYaw, dir, fullTurns := findSpinParams(angleDeg, degsPerSec, startYaw)
-	errBound := errTarget
+	errBound := boundCheckTarget
 	if fullTurns > 0 {
-		errBound = errTurn
+		errBound = boundCheckTurn
 	}
 	turnCount := 0
 	errCounter := 0
@@ -164,7 +164,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 						}
 						return
 					}
-					return
+					continue
 				}
 				errCounter = 0 // reset reading error count to zero if we are successfully reading again
 
@@ -189,7 +189,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 				// check if we've overshot our target by the errTarget value
 				// check if we've travelled at all
 				if fullTurns == 0 {
-					if (atTarget && minTravel) || (overShot && minTravel) {
+					if atTarget && (minTravel || overShot) {
 						if err := sb.Stop(ctx, nil); err != nil {
 							return
 						}
@@ -201,7 +201,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 						}
 					}
 				} else {
-					if (turnCount >= fullTurns) && atTarget {
+					if (turnCount >= fullTurns) && atTarget && (minTravel || overShot) {
 						if err := sb.Stop(ctx, nil); err != nil {
 							return
 						}
