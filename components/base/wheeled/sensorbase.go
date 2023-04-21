@@ -100,6 +100,10 @@ func (sb *sensorBase) Spin(ctx context.Context, angleDeg, degsPerSec float64, ex
 		sb.sensorDone()
 	}
 
+	wb := sb.base.(*wheeledBase)
+
+	rpm, revolutions := wb.spinMath(angleDeg, degsPerSec)
+
 	// start a sensor context for the sensor loop based on the longstanding base
 	// creator context
 	var sensorCtx context.Context
@@ -107,7 +111,7 @@ func (sb *sensorBase) Spin(ctx context.Context, angleDeg, degsPerSec float64, ex
 
 	sb.activeBackgroundWorkers.Add(1)
 	utils.ManagedGo(func() {
-		if err := sb.base.SetVelocity(ctx, r3.Vector{}, r3.Vector{Z: angleDeg}, nil); err != nil {
+		if err := wb.runAll(ctx, -rpm, revolutions, rpm, revolutions); err != nil {
 			sb.logger.Error(err)
 		}
 	}, sb.activeBackgroundWorkers.Done)
