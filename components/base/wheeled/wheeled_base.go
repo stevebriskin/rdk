@@ -96,15 +96,8 @@ func (cfg *Config) Validate(path string) ([]string, error) {
 }
 
 func init() {
-	wheeledBaseComp := resource.Registration[base.Base, *Config]{
-		Constructor: func(
-			ctx context.Context, deps resource.Dependencies, conf resource.Config, logger golog.Logger,
-		) (base.Base, error) {
-			return createWheeledBase(ctx, deps, conf, logger)
-		},
-	}
-
-	resource.RegisterComponent(base.API, Model, wheeledBaseComp)
+	resource.RegisterComponent(base.Subtype, ModelName, resource.Registration[base.Base, *Config]{
+		Constructor: createWheeledBase})
 }
 
 type wheeledBase struct {
@@ -378,7 +371,7 @@ func createWheeledBase(
 	deps resource.Dependencies,
 	conf resource.Config,
 	logger golog.Logger,
-) (base.LocalBase, error) {
+) (base.Base, error) {
 	newConf, err := resource.NativeConfig[*Config](conf)
 	if err != nil {
 		return nil, err

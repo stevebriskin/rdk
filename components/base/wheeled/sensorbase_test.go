@@ -11,12 +11,9 @@ import (
 	"go.viam.com/test"
 
 	"go.viam.com/rdk/components/base"
-	"go.viam.com/rdk/components/generic"
 	"go.viam.com/rdk/components/motor"
 	"go.viam.com/rdk/components/movementsensor"
-	"go.viam.com/rdk/config"
 	"go.viam.com/rdk/operation"
-	"go.viam.com/rdk/registry"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/rdk/testutils/inject"
@@ -287,12 +284,11 @@ func TestSpinWithMovementSensor(t *testing.T) {
 	}
 
 	sensorBase := &sensorBase{
-		Unimplemented: generic.Unimplemented{},
-		base:          &base,
-		sensorMu:      sync.Mutex{},
-		sensorDone:    sensorCancel,
-		allSensors:    []movementsensor.MovementSensor{ms},
-		orientation:   ms,
+		base:        &base,
+		sensorMu:    sync.Mutex{},
+		sensorDone:  sensorCancel,
+		allSensors:  []movementsensor.MovementSensor{ms},
+		orientation: ms,
 	}
 
 	err := sensorBase.stopSpinWithSensor(sensorCtx, 10, 50)
@@ -304,10 +300,10 @@ func TestSpinWithMovementSensor(t *testing.T) {
 	sensorBase.sensorDone()
 }
 
-func sConfig() config.Component {
-	return config.Component{
+func sConfig() resource.Config {
+	return resource.Config{
 		Name:  "test",
-		Type:  base.Subtype.ResourceSubtype,
+		API:   base.Subtype,
 		Model: resource.Model{Name: "wheeled_base"},
 		ConvertedAttributes: &Config{
 			WidthMM:              100,
@@ -322,24 +318,20 @@ func sConfig() config.Component {
 func TestSensorBase(t *testing.T) {
 	ctx := context.Background()
 	logger := golog.NewTestLogger(t)
-	deps, err := testCfg.Validate("path")
+	testCfg := sConfig()
+	conf, ok := testCfg.ConvertedAttributes.(*Config)
+	test.That(t, ok, test.ShouldBeTrue)
+	deps, err := conf.Validate("path")
 	test.That(t, err, test.ShouldBeNil)
-	motorDeps := fakeMotorDependencies(t, deps)
-	wheeled, err := createWheeledBase(context.Background(), motorDeps, testCfg, logger)
-	test.That(t, err, test.ShouldBeNil)
-	test.That(t, wheeled, test.ShouldNotBeNil)
-
-	msDeps := make(registry.Dependencies)
+	msDeps := fakeMotorDependencies(t, deps)
 	msDeps[movementsensor.Named("ms")] = &inject.MovementSensor{
 		PropertiesFuncExtraCap: map[string]interface{}{},
 		PropertiesFunc: func(ctx context.Context, extra map[string]interface{}) (*movementsensor.Properties, error) {
 			return &movementsensor.Properties{OrientationSupported: true}, nil
 		},
 	}
-	sCfg := sConfig()
-	conf, ok := sCfg.ConvertedAttributes.(*Config)
-	test.That(t, ok, test.ShouldBeTrue)
-	sensorBase, err := makeBaseWithSensors(ctx, wheeled, msDeps, conf, logger)
+
+	wheeled, err := createWheeledBase(ctx, msDeps, testCfg, logger)
 	test.That(t, err, test.ShouldBeNil)
-	test.That(t, sensorBase, test.ShouldNotBeNil)
+	test.That(t, wheeled, test.ShouldNotBeNil)
 }

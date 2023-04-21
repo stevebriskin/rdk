@@ -28,10 +28,12 @@ const (
 )
 
 type sensorBase struct {
+	resource.Named
+	resource.AlwaysRebuild
 	logger golog.Logger
 
 	activeBackgroundWorkers sync.WaitGroup
-	base                    base.LocalBase
+	base                    base.Base
 	baseCtx                 context.Context
 
 	sensorMu      sync.Mutex
@@ -46,11 +48,11 @@ type sensorBase struct {
 
 func makeBaseWithSensors(
 	ctx context.Context,
-	base *wheeledBase,
+	base base.LocalBase,
 	deps resource.Dependencies,
 	ms []string,
 	logger golog.Logger,
-) (base.LocalBase, error) {
+) (base.Base, error) {
 	// use base's creator context as the long standing context fot eh sensor loop
 	// so we don't add many background workers
 	sb := &sensorBase{base: base, logger: logger, baseCtx: ctx}
@@ -348,10 +350,6 @@ func (sb *sensorBase) Stop(ctx context.Context, extra map[string]interface{}) er
 
 func (sb *sensorBase) IsMoving(ctx context.Context) (bool, error) {
 	return sb.base.IsMoving(ctx)
-}
-
-func (sb *sensorBase) Width(ctx context.Context) (int, error) {
-	return sb.base.Width(ctx)
 }
 
 func (sb *sensorBase) Close(ctx context.Context) error {
