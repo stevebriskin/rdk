@@ -303,7 +303,7 @@ func TestSpinWithMovementSensor(t *testing.T) {
 func sConfig() resource.Config {
 	return resource.Config{
 		Name:  "test",
-		API:   base.Subtype,
+		API:   base.API,
 		Model: resource.Model{Name: "wheeled_base"},
 		ConvertedAttributes: &Config{
 			WidthMM:              100,

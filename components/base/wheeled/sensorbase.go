@@ -46,7 +46,7 @@ type sensorBase struct {
 	orientation movementsensor.MovementSensor
 }
 
-func makeBaseWithSensors(
+func attachSensorsToBase(
 	ctx context.Context,
 	base base.LocalBase,
 	deps resource.Dependencies,
@@ -141,7 +141,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 
 	startTime := time.Now()
 	// timeout duration is 1.5 times the expected time to perform a movement
-	timeoutDur := time.Duration(int(time.Second) * int(1.5*math.Abs(angleDeg/degsPerSec)))
+	timeoutDur := time.Duration(int(time.Second) * int(2*math.Abs(angleDeg/degsPerSec)))
 
 	sb.activeBackgroundWorkers.Add(1)
 	utils.ManagedGo(func() {
