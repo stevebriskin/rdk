@@ -53,11 +53,10 @@ func attachSensorsToBase(
 	ms []string,
 	logger golog.Logger,
 ) (base.Base, error) {
-	// use base's creator context as the long standing context fot eh sensor loop
-	// so we don't add many background workers
+	// use base's creator context as the long standing context for the sensor loop
 	sb := &sensorBase{base: base, logger: logger, baseCtx: ctx}
 
-	var omsName string
+	var oriMsName string
 	for _, msName := range ms {
 		ms, err := movementsensor.FromDependencies(deps, msName)
 		if err != nil {
@@ -67,11 +66,11 @@ func attachSensorsToBase(
 		props, err := ms.Properties(ctx, nil)
 		if props.OrientationSupported && err == nil {
 			sb.orientation = ms
-			omsName = msName
+			oriMsName = msName
 		}
 	}
 
-	sb.logger.Infof("using sensor %s as orientation sensor for base", omsName)
+	sb.logger.Infof("using sensor %s as orientation sensor for base", oriMsName)
 
 	return sb, nil
 }
