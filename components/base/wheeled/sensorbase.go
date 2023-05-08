@@ -20,7 +20,7 @@ import (
 
 const (
 	yawPollTime      = 10 * time.Millisecond
-	boundCheckTurn   = 2.0
+	boundCheckTurn   = 1.0
 	boundCheckTarget = 5.0
 	oneTurn          = 360
 	increment        = 0.1
@@ -103,7 +103,7 @@ func (sb *sensorBase) Spin(ctx context.Context, angleDeg, degsPerSec float64, ex
 
 	wb := sb.base.(*wheeledBase)
 
-	rpm, revolutions := wb.spinMath(angleDeg, degsPerSec)
+	rpm, _ := wb.spinMath(angleDeg, degsPerSec)
 
 	// start a sensor context for the sensor loop based on the longstanding base
 	// creator context
@@ -112,7 +112,7 @@ func (sb *sensorBase) Spin(ctx context.Context, angleDeg, degsPerSec float64, ex
 
 	sb.activeBackgroundWorkers.Add(1)
 	utils.ManagedGo(func() {
-		if err := wb.runAll(ctx, -rpm, revolutions, rpm, revolutions); err != nil {
+		if err := wb.runAll(ctx, -rpm, 0, rpm, 0); err != nil {
 			sb.logger.Error(err)
 		}
 	}, sb.activeBackgroundWorkers.Done)
@@ -208,7 +208,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 						}
 					}
 				} else {
-					if minTravel && (turnCount > fullTurns) && (atTarget || overShot) {
+					if minTravel && (turnCount >= fullTurns) && (atTarget || overShot) {
 						if err := sb.Stop(ctx, nil); err != nil {
 							return
 						}

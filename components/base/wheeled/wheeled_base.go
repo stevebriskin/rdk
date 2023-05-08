@@ -97,7 +97,8 @@ func (cfg *Config) Validate(path string) ([]string, error) {
 
 func init() {
 	resource.RegisterComponent(base.API, Model, resource.Registration[base.Base, *Config]{
-		Constructor: createWheeledBase})
+		Constructor: createWheeledBase,
+	})
 }
 
 type wheeledBase struct {
