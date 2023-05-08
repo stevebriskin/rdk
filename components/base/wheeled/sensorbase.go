@@ -194,52 +194,52 @@ func (sb *sensorBase) stopSpinWithSensor(
 				// poll the sensor for the current error in angle
 				// check if we've overshot our target by the errTarget value
 				// check if we've travelled at all
-				if fullTurns == 0 {
-					if minTravel && (atTarget || overShot) {
+				// if fullTurns == 0 {
+				if minTravel && (atTarget || overShot) {
 
-						if angleDeg > 360 {
-							turnCount++
-							if turnCount >= fullTurns && atTarget {
-								if err := sb.Stop(ctx, nil); err != nil {
-									return
-								}
-							} else {
-								continue
+					if angleDeg > 360 {
+						turnCount++
+						if turnCount >= fullTurns && atTarget {
+							if err := sb.Stop(ctx, nil); err != nil {
+								return
 							}
-						}
-
-						if err := sb.Stop(ctx, nil); err != nil {
-							return
-						}
-
-						if sensorDebug {
-							sb.logger.Debugf(
-								"stopping base with errAngle:%.2f, overshot? %t",
-								math.Abs(targetYaw-currYaw), overShot)
+						} else {
+							continue
 						}
 					}
-				} /*else {
-					if minTravel && (turnCount >= fullTurns) && (atTarget || overShot) {
-						if err := sb.Stop(ctx, nil); err != nil {
-							return
-						}
 
-						if sensorDebug {
-							sb.logger.Debugf(
-								"stopping base with errAngle:%.2f, overshot? %t, fullTurns %d, turnCount %d",
-								math.Abs(targetYaw-currYaw), overShot, fullTurns, turnCount)
-						}
-					}
-				}*/
-
-				if time.Since(startTime) > timeoutDur {
-					sb.logger.Debug("exceeded time for Spin call, stopping base")
 					if err := sb.Stop(ctx, nil); err != nil {
 						return
 					}
+
+					if sensorDebug {
+						sb.logger.Debugf(
+							"stopping base with errAngle:%.2f, overshot? %t",
+							math.Abs(targetYaw-currYaw), overShot)
+					}
+				}
+			} /*else {
+				if minTravel && (turnCount >= fullTurns) && (atTarget || overShot) {
+					if err := sb.Stop(ctx, nil); err != nil {
+						return
+					}
+
+					if sensorDebug {
+						sb.logger.Debugf(
+							"stopping base with errAngle:%.2f, overshot? %t, fullTurns %d, turnCount %d",
+							math.Abs(targetYaw-currYaw), overShot, fullTurns, turnCount)
+					}
+				}
+			}*/
+
+			if time.Since(startTime) > timeoutDur {
+				sb.logger.Debug("exceeded time for Spin call, stopping base")
+				if err := sb.Stop(ctx, nil); err != nil {
+					return
 				}
 			}
 		}
+		// }
 	}, sb.activeBackgroundWorkers.Done)
 	return nil
 }
