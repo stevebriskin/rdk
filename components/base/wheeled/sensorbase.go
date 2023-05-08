@@ -158,7 +158,6 @@ func (sb *sensorBase) stopSpinWithSensor(
 				ticker.Stop()
 				return
 			case <-ticker.C:
-
 				// imu readings are limited from 0 -> 360
 				currYaw, err := getCurrentYaw(ctx, sb.orientation)
 				if err != nil {
@@ -179,7 +178,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 
 				// if the imu yaw reading is close to 360, we are near a full turn,
 				// so we adjust the current reading by 360 * the number of turns we've done
-				if atTarget && (fullTurns > 0) {
+				if atTarget && minTravel && (angleDeg > 360) {
 					turnCount++
 					overShot = false
 					minTravel = true
@@ -197,6 +196,18 @@ func (sb *sensorBase) stopSpinWithSensor(
 				// check if we've travelled at all
 				if fullTurns == 0 {
 					if minTravel && (atTarget || overShot) {
+
+						if angleDeg > 360 {
+							turnCount++
+							if turnCount >= fullTurns && atTarget {
+								if err := sb.Stop(ctx, nil); err != nil {
+									return
+								}
+							} else {
+								continue
+							}
+						}
+
 						if err := sb.Stop(ctx, nil); err != nil {
 							return
 						}
@@ -207,7 +218,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 								math.Abs(targetYaw-currYaw), overShot)
 						}
 					}
-				} else {
+				} /*else {
 					if minTravel && (turnCount >= fullTurns) && (atTarget || overShot) {
 						if err := sb.Stop(ctx, nil); err != nil {
 							return
@@ -219,7 +230,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 								math.Abs(targetYaw-currYaw), overShot, fullTurns, turnCount)
 						}
 					}
-				}
+				}*/
 
 				if time.Since(startTime) > timeoutDur {
 					sb.logger.Debug("exceeded time for Spin call, stopping base")

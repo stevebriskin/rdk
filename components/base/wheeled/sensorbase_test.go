@@ -188,7 +188,6 @@ func TestHasOverShot(t *testing.T) {
 			{"complete", 357},
 		} {
 			for _, start := range []float64{
-				// TODO RSDK- refine overshot cases, add 3 around 360 range
 				5,
 				12,
 				15,
