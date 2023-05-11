@@ -158,6 +158,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 				ticker.Stop()
 				return
 			case <-ticker.C:
+
 				// imu readings are limited from 0 -> 360
 				currYaw, err := getCurrentYaw(ctx, sb.orientation)
 				if err != nil {
@@ -178,7 +179,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 
 				// if the imu yaw reading is close to 360, we are near a full turn,
 				// so we adjust the current reading by 360 * the number of turns we've done
-				if atTarget && minTravel && (angleDeg > 360) {
+				if atTarget && (fullTurns > 0) {
 					turnCount++
 					overShot = false
 					minTravel = true
@@ -194,20 +195,34 @@ func (sb *sensorBase) stopSpinWithSensor(
 				// poll the sensor for the current error in angle
 				// check if we've overshot our target by the errTarget value
 				// check if we've travelled at all
-				// if fullTurns == 0 {
-				if minTravel && (atTarget || overShot) {
+				if fullTurns == 0 {
+					if minTravel && (atTarget || overShot) {
+						if err := sb.Stop(ctx, nil); err != nil {
+							return
+						}
 
-					if angleDeg > 360 {
-						turnCount++
-						if turnCount >= fullTurns && atTarget {
-							if err := sb.Stop(ctx, nil); err != nil {
-								return
-							}
-						} else {
-							continue
+						if sensorDebug {
+							sb.logger.Debugf(
+								"stopping base with errAngle:%.2f, overshot? %t",
+								math.Abs(targetYaw-currYaw), overShot)
 						}
 					}
+				} else {
+					if minTravel && (turnCount >= fullTurns) && (atTarget || overShot) {
+						if err := sb.Stop(ctx, nil); err != nil {
+							return
+						}
 
+						if sensorDebug {
+							sb.logger.Debugf(
+								"stopping base with errAngle:%.2f, overshot? %t, fullTurns %d, turnCount %d",
+								math.Abs(targetYaw-currYaw), overShot, fullTurns, turnCount)
+						}
+					}
+				}
+
+				if time.Since(startTime) > timeoutDur {
+					sb.logger.Debug("exceeded time for Spin call, stopping base")
 					if err := sb.Stop(ctx, nil); err != nil {
 						return
 					}
@@ -218,19 +233,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 							math.Abs(targetYaw-currYaw), overShot)
 					}
 				}
-			} /*else {
-				if minTravel && (turnCount >= fullTurns) && (atTarget || overShot) {
-					if err := sb.Stop(ctx, nil); err != nil {
-						return
-					}
-
-					if sensorDebug {
-						sb.logger.Debugf(
-							"stopping base with errAngle:%.2f, overshot? %t, fullTurns %d, turnCount %d",
-							math.Abs(targetYaw-currYaw), overShot, fullTurns, turnCount)
-					}
-				}
-			}*/
+			}
 
 			if time.Since(startTime) > timeoutDur {
 				sb.logger.Debug("exceeded time for Spin call, stopping base")
@@ -239,7 +242,6 @@ func (sb *sensorBase) stopSpinWithSensor(
 				}
 			}
 		}
-		// }
 	}, sb.activeBackgroundWorkers.Done)
 	return nil
 }
