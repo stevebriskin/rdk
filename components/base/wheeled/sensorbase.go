@@ -23,7 +23,7 @@ const (
 	boundCheckTurn   = 1.0
 	boundCheckTarget = 5.0
 	oneTurn          = 360
-	increment        = 0.1
+	increment        = 0.01
 	sensorDebug      = true
 )
 
@@ -175,7 +175,7 @@ func (sb *sensorBase) stopSpinWithSensor(
 				}
 				errCounter = 0 // reset reading error count to zero if we are successfully reading again
 
-				atTarget, overShot, minTravel := getTurnState(currYaw, startYaw, targetYaw, dir, errBound)
+				atTarget, overShot, minTravel := getTurnState(currYaw, startYaw, targetYaw, dir, angleDeg, errBound)
 
 				// if the imu yaw reading is close to 360, we are near a full turn,
 				// so we adjust the current reading by 360 * the number of turns we've done
@@ -246,10 +246,10 @@ func (sb *sensorBase) stopSpinWithSensor(
 	return nil
 }
 
-func getTurnState(currYaw, startYaw, targetYaw, dir, errorBound float64) (atTarget, overShot, minTravel bool) {
+func getTurnState(currYaw, startYaw, targetYaw, dir, angleDeg, errorBound float64) (atTarget, overShot, minTravel bool) {
 	atTarget = math.Abs(targetYaw-currYaw) < errorBound
 	overShot = hasOverShot(currYaw, startYaw, targetYaw, dir)
-	travelIncrement := math.Abs((targetYaw - startYaw) * increment)
+	travelIncrement := math.Abs(angleDeg * increment)
 	// check the case where we're asking for a 360 degree turn, this results in a zero travelIncrement
 	if rdkutils.Float64AlmostEqual(travelIncrement, 0.0, 0.001) {
 		travelIncrement = boundCheckTarget

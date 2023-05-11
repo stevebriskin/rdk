@@ -420,7 +420,8 @@ func createWheeledBase(
 	wb.allMotors = append(wb.allMotors, wb.right...)
 
 	if len(newConf.MovementSensor) != 0 {
-		sb, err := attachSensorsToBase(ctx, wb, deps, newConf.MovementSensor, logger)
+		baseCtx := context.Background()
+		sb, err := attachSensorsToBase(baseCtx, wb, deps, newConf.MovementSensor, logger)
 		if err != nil {
 			return nil, err
 		}
