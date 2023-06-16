@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"math/rand"
+
 	"go.viam.com/test"
 )
 
@@ -171,6 +173,33 @@ func TestStopNotCalledOnOldContext(t *testing.T) {
 	wg.Wait()
 	test.That(t, ctx.Err(), test.ShouldNotBeNil)
 	test.That(t, mock.stopCount, test.ShouldEqual, 0)
+}
+
+func TestNewRace(t *testing.T) {
+	som := SingleOperationManager{}
+	var wg sync.WaitGroup
+
+	someSharedPinState := 0
+	doSomeWork := func() {
+		defer wg.Done()
+
+		// expected behavior: New does not return until the old operation has completed
+		_, done := som.New(context.Background())
+		defer done()
+
+		someSharedPinState = 1
+		time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond) //jitter
+		someSharedPinState = 0
+	}
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go doSomeWork()
+	}
+	wg.Wait()
+
+	test.That(t, someSharedPinState, test.ShouldBeZeroValue)
+
 }
 
 type mock struct {
