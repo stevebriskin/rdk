@@ -184,8 +184,12 @@ func TestNewRace(t *testing.T) {
 		defer wg.Done()
 
 		// expected behavior: New does not return until the old operation has completed
-		_, done := som.New(context.Background())
+		ctx := context.Background()
+		oldctx, done := som.New(context.Background())
 		defer done()
+
+		// make sure it's not a nested op
+		test.That(t, oldctx, test.ShouldNotEqual, ctx)
 
 		someSharedPinState = 1
 		time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond) //jitter
