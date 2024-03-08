@@ -18,6 +18,6 @@ import (
 var logger = logging.NewDebugLogger("robot_server")
 
 func main() {
-	defer profile.Start(profile.ProfilePath("."), profile.MutexProfile).Stop()
+	defer profile.Start(profile.ProfilePath("."), profile.TraceProfile).Stop()
 	utils.ContextualMain(server.RunServer, logger)
 }
