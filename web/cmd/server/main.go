@@ -3,7 +3,7 @@
 package main
 
 import (
-	"github.com/pkg/profile"
+	// "github.com/pkg/profile"
 	"go.viam.com/utils"
 
 	// registers all components.
@@ -18,6 +18,6 @@ import (
 var logger = logging.NewDebugLogger("robot_server")
 
 func main() {
-	defer profile.Start(profile.ProfilePath("."), profile.TraceProfile).Stop()
+	// defer profile.Start(profile.ProfilePath("."), profile.TraceProfile).Stop()
 	utils.ContextualMain(server.RunServer, logger)
 }
