@@ -3,11 +3,13 @@
 package main
 
 import (
+	"github.com/pkg/profile"
 	"go.viam.com/utils"
 
 	// registers all components.
 	_ "go.viam.com/rdk/components/register"
 	"go.viam.com/rdk/logging"
+
 	// registers all services.
 	_ "go.viam.com/rdk/services/register"
 	"go.viam.com/rdk/web/server"
@@ -16,5 +18,6 @@ import (
 var logger = logging.NewDebugLogger("robot_server")
 
 func main() {
+	defer profile.Start(profile.ProfilePath("."), profile.MutexProfile).Stop()
 	utils.ContextualMain(server.RunServer, logger)
 }
