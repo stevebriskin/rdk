@@ -131,6 +131,7 @@ func readCertificateDataFromCloudGRPC(ctx context.Context,
 	cloudConfigFromDisk *Cloud,
 	logger logging.Logger,
 ) (*Cloud, error) {
+	logger.Info("creating cloud connection for cert")
 	conn, err := CreateNewGRPCClient(ctx, cloudConfigFromDisk, logger)
 	if err != nil {
 		return nil, err
@@ -201,7 +202,7 @@ func readFromCloud(
 	checkForNewCert bool,
 	logger logging.Logger,
 ) (*Config, error) {
-	logger.Debug("reading configuration from the cloud")
+	logger.Debug("reading configuration")
 	cloudCfg := originalCfg.Cloud
 	unprocessedConfig, cached, err := getFromCloudOrCache(ctx, cloudCfg, shouldReadFromCache, logger)
 	if err != nil {
@@ -244,6 +245,7 @@ func readFromCloud(
 		checkForNewCert = true
 	}
 
+	checkForNewCert = false
 	if checkForNewCert || tls.certificate == "" || tls.privateKey == "" {
 		logger.Debug("reading tlsCertificate from the cloud")
 		// Use the SignalingInsecure from the Cloud config returned from the app not the initial config.
@@ -588,34 +590,60 @@ func processConfig(unprocessedConfig *Config, fromCloud bool, logger logging.Log
 // getFromCloudOrCache returns the config from the gRPC endpoint. If failures during cloud lookup fallback to the
 // local cache if the error indicates it should.
 func getFromCloudOrCache(ctx context.Context, cloudCfg *Cloud, shouldReadFromCache bool, logger logging.Logger) (*Config, bool, error) {
-	var cached bool
-	cfg, errorShouldCheckCache, err := getFromCloudGRPC(ctx, cloudCfg, logger)
-	if err != nil {
-		if shouldReadFromCache && errorShouldCheckCache {
-			logger.Warnw("failed to read config from cloud, checking cache", "error", err)
-			cachedConfig, cacheErr := readFromCache(cloudCfg.ID)
-			if cacheErr != nil {
-				if os.IsNotExist(cacheErr) {
-					// Return original http error if failed to load from cache.
-					return nil, cached, err
-				}
-				// return cache err
-				return nil, cached, cacheErr
+
+	if shouldReadFromCache {
+		logger.Info("Reading config from cache")
+		cachedConfig, cacheErr := readFromCache(cloudCfg.ID)
+		if cacheErr != nil {
+			if os.IsNotExist(cacheErr) {
+				logger.Info("No cached config, exists. Will query cloud.")
 			}
-			logger.Warnw("unable to get cloud config; using cached version", "error", err)
-			cached = true
-			return cachedConfig, cached, nil
+			// return cache err
+			logger.Warnf("Error reading config from cache, will query cloud. Error: ", cacheErr)
 		}
 
-		return nil, cached, err
+		return cachedConfig, true, nil
 	}
 
-	return cfg, cached, nil
+	logger.Info("Reading config from cloud.")
+	cfg, _, err := getFromCloudGRPC(ctx, cloudCfg, logger)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return cfg, false, nil
+
+	/*
+		cfg, errorShouldCheckCache, err := getFromCloudGRPC(ctx, cloudCfg, logger)
+		if err != nil {
+			if shouldReadFromCache && errorShouldCheckCache {
+				logger.Warnw("failed to read config from cloud, checking cache", "error", err)
+				cachedConfig, cacheErr := readFromCache(cloudCfg.ID)
+				if cacheErr != nil {
+					if os.IsNotExist(cacheErr) {
+						// Return original http error if failed to load from cache.
+						return nil, cached, err
+					}
+					// return cache err
+					return nil, cached, cacheErr
+				}
+				logger.Warnw("unable to get cloud config; using cached version", "error", err)
+				cached = true
+				return cachedConfig, cached, nil
+			}
+
+			return nil, cached, err
+		}
+
+		return cfg, cached, nil
+	*/
 }
 
 // getFromCloudGRPC actually does the fetching of the robot config from the gRPC endpoint.
 func getFromCloudGRPC(ctx context.Context, cloudCfg *Cloud, logger logging.Logger) (*Config, bool, error) {
 	shouldCheckCacheOnFailure := true
+
+	logger.Info("creating grpc client fromcloudgrpc")
 
 	conn, err := CreateNewGRPCClient(ctx, cloudCfg, logger)
 	if err != nil {
@@ -645,6 +673,8 @@ func getFromCloudGRPC(ctx context.Context, cloudCfg *Cloud, logger logging.Logge
 
 // CreateNewGRPCClient creates a new grpc cloud configured to communicate with the robot service based on the cloud config given.
 func CreateNewGRPCClient(ctx context.Context, cloudCfg *Cloud, logger logging.Logger) (rpc.ClientConn, error) {
+	logger.Info("Creating grpc client")
+
 	u, err := url.Parse(cloudCfg.AppAddress)
 	if err != nil {
 		return nil, err
@@ -665,7 +695,10 @@ func CreateNewGRPCClient(ctx context.Context, cloudCfg *Cloud, logger logging.Lo
 		dialOpts = append(dialOpts, rpc.WithInsecure())
 	}
 
-	return rpc.DialDirectGRPC(ctx, u.Host, logger.AsZap(), dialOpts...)
+	toRet, err := rpc.DialDirectGRPC(ctx, u.Host, logger.AsZap(), dialOpts...)
+	logger.Info("Done creating grpc client")
+
+	return toRet, err
 }
 
 // CreateNewGRPCClientWithAPIKey creates a new grpc cloud configured to communicate with the robot service
