@@ -401,8 +401,13 @@ func newWithResources(
 		}
 	}()
 
+
 	if cfg.Cloud != nil && cfg.Cloud.AppAddress != "" {
-		_, cloudConn, err := r.cloudConnSvc.AcquireConnection(ctx)
+				logger.Info("acquiring connection in local robot newwithresources")
+
+				var cloudConn rpc.ClientConn
+				var err error
+		cloudConn, err = nil, context.DeadlineExceeded //r.cloudConnSvc.AcquireConnection(ctx)
 		if err == nil {
 			r.packageManager, err = packages.NewCloudManager(cfg.Cloud, pb.NewPackageServiceClient(cloudConn), cfg.PackagePath, logger)
 			if err != nil {
