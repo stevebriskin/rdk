@@ -354,6 +354,8 @@ func (svc *builtIn) initSyncer(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, grpcConnectionTimeout)
 	defer cancel()
 
+	svc.logger.Info("acquiring connection in datamanager initsyncer")
+
 	identity, conn, err := svc.cloudConnSvc.AcquireConnection(ctx)
 	if errors.Is(err, cloud.ErrNotCloudManaged) {
 		svc.logger.CDebug(ctx, "Using no-op sync manager when not cloud managed")

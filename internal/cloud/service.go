@@ -66,6 +66,9 @@ type cloudManagedService struct {
 func (cm *cloudManagedService) AcquireConnection(ctx context.Context) (string, rpc.ClientConn, error) {
 	cm.dialerMu.RLock()
 	defer cm.dialerMu.RUnlock()
+
+	cm.logger.Info("Creating grpc client in acquire connection")
+
 	if !cm.managed {
 		return "", nil, ErrNotCloudManaged
 	}
