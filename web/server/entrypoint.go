@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
 	"go.viam.com/utils"
-	"go.viam.com/utils/perf"
+	//"go.viam.com/utils/perf"
 	"go.viam.com/utils/rpc"
 	"golang.org/x/exp/slices"
 
@@ -121,6 +121,7 @@ func RunServer(ctx context.Context, args []string, _ logging.Logger) (err error)
 	}
 
 	// Read the config from disk and use it to initialize the remote logger.
+	/*
 	initialReadCtx, cancel := context.WithTimeout(ctx, time.Second*5)
 	cfgFromDisk, err := config.ReadLocalConfig(initialReadCtx, argsParsed.ConfigFile, logger)
 	if err != nil {
@@ -139,6 +140,7 @@ func RunServer(ctx context.Context, args []string, _ logging.Logger) (err error)
 
 	// Start remote logging with config from disk.
 	// This is to ensure we make our best effort to write logs for failures loading the remote config.
+
 	if cfgFromDisk.Cloud != nil && (cfgFromDisk.Cloud.LogPath != "" || cfgFromDisk.Cloud.AppAddress != "") {
 		netAppender, err := logging.NewNetAppender(
 			&logging.CloudConfig{
@@ -154,6 +156,7 @@ func RunServer(ctx context.Context, args []string, _ logging.Logger) (err error)
 
 		logger.AddAppender(netAppender)
 	}
+	*/
 
 	server := robotServer{
 		logger: logger,
