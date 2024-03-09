@@ -69,7 +69,6 @@ require (
 	github.com/pion/mediadevices v0.5.1-0.20231017204133-3c9fee958efe
 	github.com/pion/rtp v1.8.2
 	github.com/pion/webrtc/v3 v3.2.21
-	github.com/pkg/profile v1.7.0
 	github.com/rhysd/actionlint v1.6.24
 	github.com/rs/cors v1.9.0
 	github.com/sergi/go-diff v1.3.1
@@ -114,12 +113,8 @@ require (
 	cloud.google.com/go v0.110.4 // indirect
 	cloud.google.com/go/compute v1.21.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	cloud.google.com/go/container v1.22.1 // indirect
 	cloud.google.com/go/iam v1.1.1 // indirect
-	cloud.google.com/go/monitoring v1.15.1 // indirect
 	cloud.google.com/go/storage v1.30.1 // indirect
-	cloud.google.com/go/trace v1.10.1 // indirect
-	contrib.go.opencensus.io/exporter/stackdriver v0.13.4 // indirect
 	git.sr.ht/~sbinet/gg v0.3.1 // indirect
 	github.com/Abirdcfly/dupword v0.0.9 // indirect
 	github.com/Antonboom/errname v0.1.7 // indirect
@@ -301,6 +296,7 @@ require (
 	github.com/pion/transport/v2 v2.2.3 // indirect
 	github.com/pion/turn/v2 v2.1.3 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
+	github.com/pkg/profile v1.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/polyfloyd/go-errorlint v1.1.0 // indirect
 	github.com/prometheus/client_golang v1.12.2 // indirect
@@ -399,3 +395,5 @@ require (
 	github.com/ziutek/mymysql v1.5.4 // indirect
 	golang.org/x/exp v0.0.0-20230725012225-302865e7556b
 )
+
+replace go.viam.com/utils => github.com/stevebriskin/goutils v0.0.4-0.20240309180643-c5b09122a932
