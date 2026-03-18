@@ -919,9 +919,20 @@ func TestStreamingDCUpload(t *testing.T) {
 			case <-b2.sync.CloudConnReady():
 			}
 
-			// Call sync.
-			err = b2.Sync(context.Background(), nil)
-			test.That(t, err, test.ShouldBeNil)
+			// Call sync in a goroutine. Sync walks the capture dir and sends
+			// each file to the unbuffered filesToSync channel. If there are
+			// more files than sync workers and workers are stuck retrying
+			// (serviceFail case), Sync blocks in sendToSync. Running it in a
+			// goroutine with a cancellable context prevents that from
+			// deadlocking the test — cancelling the context unblocks
+			// sendToSync, which lets Sync return and release b.mu so that
+			// Close can proceed.
+			syncCtx, syncCancel := context.WithCancel(context.Background())
+			defer syncCancel()
+			syncErrCh := make(chan error, 1)
+			go func() {
+				syncErrCh <- b2.Sync(syncCtx, nil)
+			}()
 
 			// Wait for upload requests.
 			wait := time.After(waitTime)
@@ -944,6 +955,14 @@ func TestStreamingDCUpload(t *testing.T) {
 				}
 			}
 			waitUntilNoFiles(tmpDir)
+
+			// Cancel sync context to unblock Sync() if stuck in sendToSync,
+			// then wait for the goroutine to return and check the error.
+			syncCancel()
+			syncErr := <-syncErrCh
+			if !tc.serviceFail {
+				test.That(t, syncErr, test.ShouldBeNil)
+			}
 
 			// Validate error and URs.
 			if tc.serviceFail {
