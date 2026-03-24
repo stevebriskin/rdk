@@ -833,7 +833,7 @@ func TestStreamingDCUpload(t *testing.T) {
 			// MaximumCaptureFileSizeBytes is set to 1 so that each reading becomes its own capture file
 			// and we can confidently read the capture file without it's contents being modified by the collector
 			c.MaximumCaptureFileSizeBytes = 1
-			// Fix the number of sync threads. For 1. consistentcy when running on different machines
+			// Fix the number of sync threads. For 1. consistency when running on different machines
 			// and 2. so we can ensure the file count doesn't exceed it. If there are more files than workers Sync() may block.
 			const numSyncThreads = 2
 			c.MaximumNumSyncThreads = numSyncThreads
